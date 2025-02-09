@@ -63,7 +63,7 @@ class ValueIteration(AbstractSolver):
         """
 
         # you can add variables here if it is helpful
-
+        V_prev = np.zeros_like(self.V)
         # Update the estimated value of each state
         for each_state in range(self.env.observation_space.n):
             # Do a one-step lookahead to find the best action
@@ -71,6 +71,8 @@ class ValueIteration(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
+            V_prev[each_state] = self.V[each_state]
+            self.V[each_state] = np.max(self.one_step_lookahead(each_state))
 
         # Dont worry about this part
         self.statistics[Statistics.Rewards.value] = np.sum(self.V)
@@ -140,7 +142,18 @@ class ValueIteration(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
-            
+            ret_a = -float("inf")
+            max_a = -float("inf")
+            for curr_a in range(self.env.action_space.n):
+                curr_max = 0
+                for prob, next_state, reward, done in self.env.P[state][curr_a]:
+                    curr_max += prob * (reward + self.options.gamma * self.V[next_state])
+
+                if curr_max > max_a:
+                    ret_a = curr_a
+                    max_a = curr_max
+
+            return ret_a
 
         return policy_fn
 
