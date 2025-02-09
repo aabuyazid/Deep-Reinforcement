@@ -63,7 +63,6 @@ class ValueIteration(AbstractSolver):
         """
 
         # you can add variables here if it is helpful
-        V_prev = np.zeros_like(self.V)
         # Update the estimated value of each state
         for each_state in range(self.env.observation_space.n):
             # Do a one-step lookahead to find the best action
@@ -71,7 +70,6 @@ class ValueIteration(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
-            V_prev[each_state] = self.V[each_state]
             self.V[each_state] = np.max(self.one_step_lookahead(each_state))
 
         # Dont worry about this part
@@ -181,6 +179,7 @@ class AsynchVI(ValueIteration):
                             except KeyError:
                                 self.pred[next_state] = set()
 
+
     def train_episode(self):
         """
         What is this?
@@ -205,6 +204,24 @@ class AsynchVI(ValueIteration):
         # Do a one-step lookahead to find the best action       #
         # Update the value function. Ref: Sutton book eq. 4.10. #
         #########################################################
+        def H(s): # Make it negative since heap in python is always min
+            return -1 * np.abs(self.V[s] - np.max(self.one_step_lookahead(s)))
+        
+        def SDS(s) -> list:
+            affected = []
+            for a in range(self.env.action_space.n):
+                for prev_s in range(self.env.observation_space.n):
+                    for prob, next_state, _, _ in self.env.P[prev_s][a]:
+                        if next_state == s and prob > 0:
+                            affected.append(prev_s)
+
+            return affected
+        
+        s = self.pq.pop()
+        self.V[s] = np.max(self.one_step_lookahead(s))
+
+        for prev_s in SDS(s):
+            self.pq.update(prev_s, H(prev_s))
 
         # you can ignore this part
         self.statistics[Statistics.Rewards.value] = np.sum(self.V)
