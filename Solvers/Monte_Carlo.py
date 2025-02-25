@@ -62,9 +62,32 @@ class MonteCarlo(AbstractSolver):
         episode = []
         state, _ = self.env.reset()
         discount_factor = self.options.gamma
+        done = False
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
+        while not done:
+            probs = self.policy(state)
+            action = np.random.choice(np.arange(len(probs)), p=probs)
+            next_state, reward, done, _ = self.step(action)
+            episode.append((state, action, reward))
+            state = next_state
+
+        visited = set()
+        G = 0
+        gamma = self.options.gamma
+
+        for state, action, reward in episode[::-1]:
+            G = gamma * G + reward
+            sa_pair = (state, action)
+
+            if sa_pair not in visited:
+                visited.add(sa_pair)
+                self.returns_sum[sa_pair] += G
+                self.returns_count[sa_pair] += 1
+                self.Q[state][action] = (
+                    self.returns_sum[sa_pair] / self.returns_count[sa_pair]
+                )
 
     def __str__(self):
         return "Monte Carlo"
@@ -85,11 +108,17 @@ class MonteCarlo(AbstractSolver):
 
         """
         nA = self.env.action_space.n
+        epsilon = self.options.epsilon
 
         def policy_fn(observation):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
+            q = self.Q[observation]
+            best_actions = np.flatnonzero(q == q.max())
+            probs = np.full(nA, epsilon / nA)
+            probs[best_actions] += (1 - epsilon) / len(best_actions)
+            return probs
 
         return policy_fn
 
@@ -109,7 +138,9 @@ class MonteCarlo(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
-
+            q = self.Q[state]
+            best_actions = np.flatnonzero(q == q.max())
+            return np.random.choice(best_actions)
 
         return policy_fn
 
@@ -159,12 +190,32 @@ class OffPolicyMC(MonteCarlo):
         episode = []
         # Reset the environment
         state, _ = self.env.reset()
+        done = False
 
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
-        
+        while not done:
+            probs = self.behavior_policy(state)
+            action = np.random.choice(np.arange(len(probs)), p=probs)
+            next_state, reward, done, _ = self.step(action)
+            episode.append((state, action, reward))
+            state = next_state
 
+        G, W = 0.0, 1.0
+        gamma = self.options.gamma
+        for state, action, reward in episode[::-1]:
+            G = gamma * G + reward
+            self.C[state][action] += W
+            self.Q[state][action] += (
+                (W / self.C[state][action]) * 
+                (G - self.Q[state][action])
+            )
+
+            W *= (1.0 / self.behavior_policy(state)[action])
+
+
+        
     def create_random_policy(self):
         """
         Creates a random policy function.
@@ -186,3 +237,30 @@ class OffPolicyMC(MonteCarlo):
 
     def __str__(self):
         return "MC+IS"
+
+"""
+        while not done:
+            probs = self.behavior_policy(state)
+            action = np.random.choice(np.arange(len(probs)), p=probs)
+            next_state, reward, done, _ = self.step(action)
+            episode.append((state, action, reward))
+            state = next_state
+
+        G, W = 0.0, 1.0
+        gamma = self.options.gamma
+        for state, action, reward in episode[::-1]:
+            print(state, action, reward)
+            G = gamma * G + reward
+            self.C[state][action] += W
+            self.Q[state][action] += (
+                (W / self.C[state][action]) * 
+                (G - self.Q[state][action])
+            )
+
+            best_action = np.argmax(self.Q[state])
+            if best_action != action:
+                break
+
+            W *= (1.0 / self.behavior_policy(state)[action])
+
+"""
