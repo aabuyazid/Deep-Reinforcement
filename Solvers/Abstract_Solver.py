@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import gymnasium as gym
 import time
+from typing import Callable
 
 
 class AbstractSolver(ABC):
@@ -91,12 +92,16 @@ class AbstractSolver(ABC):
         pass
 
     @abstractmethod
-    def __str__(self):
-        pass
+    def __str__(self) -> str:
+        return ""
 
     @abstractmethod
-    def create_greedy_policy(self):
-        pass
+    def create_greedy_policy(self) -> Callable:
+        def policy_fn(state):
+            pass
+
+        return policy_fn
+
 
     @staticmethod
     def get_out_header():

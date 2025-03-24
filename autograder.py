@@ -701,6 +701,7 @@ class sarsa(unittest.TestCase):
         solver.Q[0][1] = 0.1
         solver.Q[0][2] = 0.2
         solver.Q[0][3] = 0.0
+        print(f"test_make_epsilon_greedy_policy: policy(0) = {policy(0)}")
         self.assertTrue(
             l2_distance_bounded(
                 np.array([0.925, 0.025, 0.025, 0.025]), policy(0), 1e-8
@@ -718,6 +719,7 @@ class sarsa(unittest.TestCase):
         solver.Q[1][1] = 0.1
         solver.Q[1][2] = 0.1
         solver.Q[1][3] = 0.1
+        print(policy(1))
         predict_action = policy(1)
         self.assertTrue(
             predict_action == 0, "`create_greedy_policy' returns unexpected policy"
