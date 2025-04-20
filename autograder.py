@@ -1057,6 +1057,7 @@ class reinforce(unittest.TestCase):
         solver = self.results["solver"]
         # Test 1
         test_rewards = [5]
+        print(solver.compute_returns(test_rewards, 1.0))
         self.assertTrue(
             l2_distance_bounded(
                 np.array(solver.compute_returns(test_rewards, 1.0)), np.array([5]), 1e-2
